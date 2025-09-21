@@ -1262,6 +1262,7 @@
       if (loan.currentBalance <= 0) return; // Skip paid loans
 
       const loanDate = new Date(loan.loan.date);
+      loanDate.setHours(0, 0, 0, 0);
       const frequency = loan.loan.frequency;
       let daysBetweenPayments;
 
@@ -1285,22 +1286,26 @@
 
       // Calcular cuántos pagos debería haber hecho hasta hoy
       const daysSinceLoan = Math.floor((today - loanDate) / (1000 * 60 * 60 * 24));
+
+      // Si aún no ha pasado el tiempo para el primer pago, no debe nada hoy
+      if (daysSinceLoan < daysBetweenPayments) return;
+
       const expectedPayments = Math.floor(daysSinceLoan / daysBetweenPayments) + 1;
       const actualPayments = loan.payments.filter(p => p.amount > 0).length;
 
-      // Si debe pagos, calcular la próxima fecha de pago
+      // Solo si debe pagos
       if (actualPayments < expectedPayments) {
+        // Calcular la fecha exacta del próximo pago que debe
         const nextPaymentDate = new Date(loanDate);
         nextPaymentDate.setDate(nextPaymentDate.getDate() + (actualPayments * daysBetweenPayments));
+        nextPaymentDate.setHours(0, 0, 0, 0);
 
-        const daysDifference = Math.floor((today - nextPaymentDate) / (1000 * 60 * 60 * 24));
-
-        // Si la fecha de pago es hoy o está vencida
-        if (daysDifference >= 0) {
+        // SOLO agregar si la fecha de pago es exactamente HOY
+        if (nextPaymentDate.getTime() === today.getTime()) {
           clientsDue.push({
             loan: loan,
             client: loan.client,
-            daysOverdue: daysDifference,
+            daysOverdue: 0, // Siempre será 0 porque solo mostramos los de hoy
             nextPaymentDate: nextPaymentDate,
             expectedAmount: loan.loan.interestPerPeriod,
             frequency: frequency,
@@ -1312,7 +1317,6 @@
 
     return clientsDue;
   }
-
   // Función para calcular tiempo transcurrido
   function getTimeAgo(timestamp) {
     const now = Date.now();
@@ -1660,153 +1664,194 @@
   }
 
   function createReceiptImage(loan) {
-    // Crear canvas Full HD
+    // Crear canvas optimizado para móviles (altura dinámica según cantidad de pagos)
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // Configurar tamaño Full HD (escala 2x)
+    // Calcular altura dinámica basada en cantidad de pagos
     const scale = 2;
-    canvas.width = 1200 * scale;  // 2400px
-    canvas.height = 1600 * scale; // 3200px
+    const baseHeight = 800; // Altura base sin pagos
+    const paymentRowHeight = 35; // Altura por cada pago
+    const totalPayments = loan.payments.length;
+    const dynamicHeight = baseHeight + (totalPayments * paymentRowHeight);
+
+    canvas.width = 750 * scale;
+    canvas.height = dynamicHeight * scale;
 
     // Fondo blanco
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Configuración de fuentes y colores (escalados)
+    // Configuración de fuentes y colores
     const primaryColor = '#1f2937';
     const secondaryColor = '#6b7280';
     const accentColor = '#3b82f6';
 
-    let y = 80 * scale;
+    let y = 40 * scale;
 
-    // Header con título (escalado)
+    // Header con título
     ctx.fillStyle = accentColor;
-    ctx.fillRect(0, 0, canvas.width, 200 * scale);
+    ctx.fillRect(0, 0, canvas.width, 120 * scale);
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = `bold ${48 * scale}px Arial`;
+    ctx.font = `bold ${28 * scale}px Arial`;
     ctx.textAlign = 'center';
-    ctx.fillText('RECIBO DE PRÉSTAMO', canvas.width / 2, 60 * scale);
+    ctx.fillText('RECIBO DE PRÉSTAMO', canvas.width / 2, 35 * scale);
 
-    // Obtener el título de la app desde el HTML
     const appTitle = document.querySelector('h1').textContent || 'Mi Panel';
-    ctx.font = `bold ${32 * scale}px Arial`;
-    ctx.fillText(`Prestamista: ${appTitle}`, canvas.width / 2, 110 * scale);
+    ctx.font = `bold ${18 * scale}px Arial`;
+    ctx.fillText(`Prestamista: ${appTitle}`, canvas.width / 2, 60 * scale);
 
-    ctx.font = `${28 * scale}px Arial`;
+    ctx.font = `${16 * scale}px Arial`;
     const currentDate = new Date().toLocaleDateString('es-ES');
     const currentTime = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    ctx.fillText(`${currentDate} - ${currentTime}`, canvas.width / 2, 150 * scale);
+    ctx.fillText(`${currentDate} - ${currentTime}`, canvas.width / 2, 85 * scale);
 
-    y = 240 * scale;
+    y = 140 * scale;
 
-    // Función helper para texto (escalada)
-    function addText(text, fontSize = 14, color = primaryColor, bold = false, align = 'left') {
+    // Función helper para texto
+    function addText(text, fontSize = 16, color = primaryColor, bold = false, align = 'left') {
       ctx.fillStyle = color;
       ctx.font = `${bold ? 'bold ' : ''}${fontSize * scale}px Arial`;
       ctx.textAlign = align;
-      ctx.fillText(text, align === 'center' ? canvas.width / 2 : 80 * scale, y);
+      const margin = 40 * scale;
+      ctx.fillText(text, align === 'center' ? canvas.width / 2 : margin, y);
       y += (fontSize + 8) * scale;
     }
 
     function addSection(title) {
-      y += 20 * scale;
+      y += 10 * scale;
       ctx.fillStyle = '#f3f4f6';
-      ctx.fillRect(40 * scale, y - 40 * scale, canvas.width - 80 * scale, 60 * scale);
+      ctx.fillRect(20 * scale, y - 25 * scale, canvas.width - 40 * scale, 35 * scale);
 
       ctx.fillStyle = primaryColor;
-      ctx.font = `bold ${32 * scale}px Arial`;
+      ctx.font = `bold ${18 * scale}px Arial`;
       ctx.textAlign = 'left';
-      ctx.fillText(title, 60 * scale, y - 10 * scale);
-      y += 40 * scale;
+      ctx.fillText(title, 30 * scale, y - 5 * scale);
+      y += 20 * scale;
     }
 
     // Datos del Cliente
     addSection('DATOS DEL CLIENTE');
-    addText(`Nombre: ${loan.client.name}`, 14, primaryColor, true);
-    addText(`Teléfono: ${loan.client.phone}`);
-    addText(`Cédula: ${loan.client.id}`);
-    addText(`Dirección: ${loan.client.address}`);
+    addText(`Nombre: ${loan.client.name}`, 16, primaryColor, true);
+    addText(`Teléfono: ${loan.client.phone}`, 15);
+    addText(`Cédula: ${loan.client.id}`, 15);
+
+    if (loan.client.address && loan.client.address.trim()) {
+      const address = loan.client.address;
+      if (address.length > 40) {
+        const words = address.split(' ');
+        let line1 = '';
+        let line2 = '';
+
+        words.forEach(word => {
+          if (line1.length + word.length <= 40) {
+            line1 += (line1 ? ' ' : '') + word;
+          } else {
+            line2 += (line2 ? ' ' : '') + word;
+          }
+        });
+
+        addText(`Dirección: ${line1}`, 15);
+        if (line2) addText(`${line2}`, 15);
+      } else {
+        addText(`Dirección: ${address}`, 15);
+      }
+    }
 
     // Datos del Préstamo
     addSection('DATOS DEL PRÉSTAMO');
-    addText(`Capital Original: $${loan.loan.principal.toLocaleString()}`, 14, primaryColor, true);
-    addText(`Tasa de Interés: ${loan.loan.rate}% ${loan.loan.frequency}`);
-    addText(`Fecha del Préstamo: ${new Date(loan.loan.date).toLocaleDateString('es-ES')}`);
-    addText(`Plazo: ${loan.loan.term} días`);
-    addText(`Saldo Actual: $${loan.currentBalance.toLocaleString()}`, 16, loan.currentBalance > 0 ? '#dc2626' : '#059669', true);
+    addText(`Capital Original: $${loan.loan.principal.toLocaleString()}`, 17, primaryColor, true);
+    addText(`Tasa: ${loan.loan.rate}% ${loan.loan.frequency}`, 15);
+    addText(`Fecha: ${new Date(loan.loan.date).toLocaleDateString('es-ES')}`, 15);
+    addText(`Plazo: ${loan.loan.term} días`, 15);
+    addText(`Saldo Actual: $${loan.currentBalance.toLocaleString()}`, 17, loan.currentBalance > 0 ? '#dc2626' : '#059669', true);
 
     // Historial de Pagos
     addSection('HISTORIAL DE PAGOS');
 
     if (loan.payments.length === 0) {
-      addText('No hay pagos registrados', 12, secondaryColor);
+      addText('No hay pagos registrados', 14, secondaryColor);
     } else {
-      // Headers de tabla (escalados)
+      // Headers de tabla
       ctx.fillStyle = '#e5e7eb';
-      ctx.fillRect(40 * scale, y, canvas.width - 80 * scale, 50 * scale);
+      ctx.fillRect(20 * scale, y, canvas.width - 40 * scale, 30 * scale);
 
       ctx.fillStyle = primaryColor;
-      ctx.font = `bold ${24 * scale}px Arial`;
+      ctx.font = `bold ${14 * scale}px Arial`;
       ctx.textAlign = 'left';
-      ctx.fillText('FECHA', 60 * scale, y + 30 * scale);
-      ctx.fillText('MONTO', 360 * scale, y + 30 * scale);
-      ctx.fillText('TIPO', 560 * scale, y + 30 * scale);
-      ctx.fillText('MÉTODO', 840 * scale, y + 30 * scale);
+      ctx.fillText('FECHA', 30 * scale, y + 20 * scale);
+      ctx.fillText('MONTO', 180 * scale, y + 20 * scale);
+      ctx.fillText('TIPO', 300 * scale, y + 20 * scale);
+      ctx.fillText('MÉTODO', 400 * scale, y + 20 * scale);
 
-      y += 70 * scale;
+      y += 35 * scale;
 
-      // Pagos (máximo 10 para que quepan)
-      const paymentsToShow = loan.payments.slice(-10);
-      paymentsToShow.forEach((payment, index) => {
+      // MOSTRAR TODOS LOS PAGOS (sin límite)
+      loan.payments.forEach((payment, index) => {
         const paymentDate = new Date(payment.date);
         const bgColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
 
         ctx.fillStyle = bgColor;
-        ctx.fillRect(40 * scale, y - 30 * scale, canvas.width - 80 * scale, 50 * scale);
+        ctx.fillRect(20 * scale, y - 15 * scale, canvas.width - 40 * scale, 30 * scale);
 
         ctx.fillStyle = primaryColor;
-        ctx.font = `${22 * scale}px Arial`;
+        ctx.font = `${14 * scale}px Arial`;
         ctx.textAlign = 'left';
 
-        ctx.fillText(paymentDate.toLocaleDateString('es-ES'), 60 * scale, y);
-        ctx.fillText(`$${payment.amount.toLocaleString()}`, 360 * scale, y);
-        ctx.fillText(payment.type === 'capital' ? 'Capital' : 'Interés', 560 * scale, y);
-        ctx.fillText(payment.method, 840 * scale, y);
+        // Fecha
+        const shortDate = paymentDate.toLocaleDateString('es-ES', {
+          day: '2-digit',
+          month: '2-digit',
+          year: '2-digit'
+        });
+        ctx.fillText(shortDate, 30 * scale, y);
 
-        y += 50 * scale;
+        // Monto con color especial para pagos $0
+        const amount = payment.amount === 0 ? '$0' : `$${payment.amount.toLocaleString()}`;
+        const amountColor = payment.amount === 0 ? '#dc2626' : primaryColor;
+        ctx.fillStyle = amountColor;
+        ctx.fillText(amount, 180 * scale, y);
+
+        // Restaurar color y continuar
+        ctx.fillStyle = primaryColor;
+
+        // Tipo
+        ctx.fillText(payment.type === 'capital' ? 'Capital' : 'Interés', 300 * scale, y);
+
+        // Método
+        ctx.fillText(payment.method, 400 * scale, y);
+
+        y += 30 * scale;
       });
-
-      if (loan.payments.length > 10) {
-        addText(`... y ${loan.payments.length - 10} pagos más`, 10, secondaryColor);
-      }
     }
 
     // Resumen
-    y += 40 * scale;
+    y += 10 * scale;
     addSection('RESUMEN');
     const totalPaid = loan.payments.reduce((sum, p) => sum + p.amount, 0);
-    addText(`Total Pagado: $${totalPaid.toLocaleString()}`, 14, primaryColor, true);
-    addText(`Saldo Pendiente: $${loan.currentBalance.toLocaleString()}`, 14, loan.currentBalance > 0 ? '#dc2626' : '#059669', true);
-    addText(`Estado: ${loan.currentBalance === 0 ? 'CANCELADO' : 'VIGENTE'}`, 14, loan.currentBalance === 0 ? '#059669' : '#f59e0b', true);
+    addText(`Total Pagado: $${totalPaid.toLocaleString()}`, 17, primaryColor, true);
+    addText(`Saldo Pendiente: $${loan.currentBalance.toLocaleString()}`, 17, loan.currentBalance > 0 ? '#dc2626' : '#059669', true);
+    addText(`Estado: ${loan.currentBalance === 0 ? 'CANCELADO' : 'VIGENTE'}`, 16, loan.currentBalance === 0 ? '#059669' : '#f59e0b', true);
 
     // Footer
-    y = canvas.height - 120 * scale;
+    y += 20 * scale;
     ctx.fillStyle = '#e5e7eb';
-    ctx.fillRect(0, y, canvas.width, 120 * scale);
+    ctx.fillRect(0, y, canvas.width, 60 * scale);
 
     ctx.fillStyle = secondaryColor;
-    ctx.font = `${24 * scale}px Arial`;
+    ctx.font = `${14 * scale}px Arial`;
     ctx.textAlign = 'center';
-    ctx.fillText('Generado automáticamente por MiPréstamo App', canvas.width / 2, y + 50 * scale);
-    ctx.fillText(`ID: ${loan.id}`, canvas.width / 2, y + 90 * scale);
+    ctx.fillText('Generado por MiPréstamo App', canvas.width / 2, y + 25 * scale);
+    ctx.font = `${12 * scale}px Arial`;
+    ctx.fillText(`ID: ${loan.id} | Total de pagos: ${loan.payments.length}`, canvas.width / 2, y + 45 * scale);
 
     // Convertir a blob y compartir
     canvas.toBlob(function (blob) {
       shareReceiptImage(blob, loan);
     }, 'image/png');
   }
+
   function shareReceiptImage(blob, loan) {
     const message = `Recibo de Préstamo - ${loan.client.name}
 
@@ -2165,7 +2210,7 @@ Reporte completo generado por MiPréstamo App`;
     const clientsDue = window.clientsWithPaymentsDue || [];
 
     if (clientsDue.length === 0) {
-      alert('🟢 ¡Excelente!\n\nTodos tus clientes están al día con sus pagos.');
+      alert('🟢 ¡Perfecto!\n\nNo tienes clientes que deban pagar hoy.');
       return;
     }
 
@@ -2193,8 +2238,8 @@ Reporte completo generado por MiPréstamo App`;
       notificationsList.innerHTML = `
       <div class="text-center text-gray-500 py-8">
         <span class="material-symbols-outlined text-4xl mb-2 block text-green-500">check_circle</span>
-        <p class="text-sm">¡Todos al día!</p>
-        <p class="text-xs text-gray-400">No hay pagos pendientes</p>
+        <p class="text-sm">¡Sin pagos para hoy!</p>
+        <p class="text-xs text-gray-400">No hay clientes que deban pagar hoy</p>
       </div>
     `;
       return;
@@ -2202,23 +2247,12 @@ Reporte completo generado por MiPréstamo App`;
 
     let html = '';
     clientsDue.forEach(item => {
-      const { client, daysOverdue, expectedAmount, frequency, paymentsOwed } = item;
+      const { client, expectedAmount, frequency, paymentsOwed } = item;
 
-      // Determinar color según días de retraso
-      let urgencyColor, urgencyText, bgColor;
-      if (daysOverdue === 0) {
-        urgencyColor = 'text-yellow-600';
-        urgencyText = 'Pago HOY';
-        bgColor = 'bg-yellow-50 border-yellow-200';
-      } else if (daysOverdue <= 3) {
-        urgencyColor = 'text-orange-600';
-        urgencyText = `${daysOverdue} día${daysOverdue > 1 ? 's' : ''} atrasado`;
-        bgColor = 'bg-orange-50 border-orange-200';
-      } else {
-        urgencyColor = 'text-red-600';
-        urgencyText = `${daysOverdue} días atrasado`;
-        bgColor = 'bg-red-50 border-red-200';
-      }
+      // Como solo mostramos los de hoy, siempre será amarillo (pago HOY)
+      const urgencyColor = 'text-yellow-600';
+      const urgencyText = 'Debe pagar HOY';
+      const bgColor = 'bg-yellow-50 border-yellow-200';
 
       html += `
       <div class="mobile-card ${bgColor} border-2 rounded-xl p-4 tap-highlight" 
@@ -2239,7 +2273,7 @@ Reporte completo generado por MiPréstamo App`;
         <div class="bg-white rounded-lg p-3 border border-gray-200">
           <div class="flex justify-between items-center mb-2">
             <span class="${urgencyColor} font-bold text-sm">${urgencyText}</span>
-            <span class="text-gray-500 text-xs">${frequency}</span>
+            <span class="text-gray-500 text-xs">Pago ${frequency}</span>
           </div>
           
           <div class="flex justify-between items-center">
@@ -2249,7 +2283,7 @@ Reporte completo generado por MiPréstamo App`;
           
           ${paymentsOwed > 1 ? `
           <div class="flex justify-between items-center mt-1">
-            <span class="text-gray-700 text-sm">Pagos pendientes:</span>
+            <span class="text-gray-700 text-sm">Pagos atrasados:</span>
             <span class="font-bold text-red-600">${paymentsOwed}</span>
           </div>
           ` : ''}
