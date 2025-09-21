@@ -1,0 +1,2429 @@
+<head>
+  <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+  <link as="style"
+    href="https://fonts.googleapis.com/css2?display=swap&amp;family=Manrope%3Awght%40400%3B500%3B700%3B800&amp;family=Noto+Sans%3Awght%40400%3B500%3B700%3B900"
+    onload="this.rel='stylesheet'" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>MiPréstamo - Gestión de Préstamos</title>
+  <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <style>
+    /* Optimizaciones para móvil */
+    * {
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    body {
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      font-size: 16px;
+      overscroll-behavior-y: none;
+    }
+
+    .touch-target {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    .tap-highlight {
+      transition: all 0.1s ease;
+    }
+
+    .tap-highlight:active {
+      transform: scale(0.95);
+      opacity: 0.8;
+    }
+
+    .slide-up {
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .smooth-scroll {
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .safe-area-top {
+      padding-top: env(safe-area-inset-top);
+    }
+
+    .safe-area-bottom {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.05);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .pulse-feedback {
+      animation: pulse 0.15s ease-in-out;
+    }
+
+    .mobile-card {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .mobile-text-lg {
+      font-size: 18px;
+      line-height: 1.4;
+    }
+
+    .mobile-text-xl {
+      font-size: 24px;
+      line-height: 1.3;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      backdrop-filter: blur(4px);
+    }
+
+    .form-input {
+      transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .slide-in-up {
+      animation: slideInUp 0.4s ease-out;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(100%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Lista de clientes */
+    .client-item {
+      transition: all 0.2s ease;
+    }
+
+    .client-item:hover {
+      background-color: #f8fafc;
+      transform: translateY(-1px);
+    }
+
+    .payment-status {
+      animation: statusPulse 2s infinite;
+    }
+
+    @keyframes statusPulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.7;
+      }
+    }
+
+    /* Long press effect */
+    .long-press {
+      background-color: #fee2e2 !important;
+      transform: scale(0.98);
+      transition: all 0.2s ease;
+    }
+
+    .delete-confirm {
+      animation: shake 0.5s ease-in-out;
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      25% {
+        transform: translateX(-5px);
+      }
+
+      75% {
+        transform: translateX(5px);
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-50 safe-area-top safe-area-bottom">
+  <div class="flex flex-col min-h-screen w-full max-w-md mx-auto bg-white shadow-xl smooth-scroll"
+    style='font-family: Manrope, "Noto Sans", sans-serif;'>
+
+    <!-- Header con Status Bar -->
+    <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white sticky top-0 z-40 safe-area-top">
+      <div class="flex items-center justify-between p-4 pb-3">
+        <button onclick="toggleMenu()"
+          class="touch-target flex items-center justify-center rounded-full bg-white bg-opacity-20 tap-highlight">
+          <span class="material-symbols-outlined text-white">assessment</span>
+        </button>
+
+        <div class="text-center flex-1">
+          <h1 class="text-lg font-bold">Juan Villarreal</h1>
+          <p class="text-blue-100 text-xs" id="currentDate">Hoy, 14 Sept</p>
+        </div>
+
+        <button onclick="toggleNotifications()"
+          class="touch-target flex items-center justify-center rounded-full bg-white bg-opacity-20 relative tap-highlight">
+          <span class="material-symbols-outlined text-white">notifications</span>
+          <span id="notificationBadge"
+            class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold pulse">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Resumen Principal - Cards Grandes -->
+    <div class="px-4 pt-4">
+      <div
+        class="mobile-card bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-5 text-white mb-4 tap-highlight slide-up">
+        <div class="flex justify-between items-start">
+          <div>
+            <p class="text-green-100 text-sm font-medium mb-1">Capital Recuperado</p>
+            <p id="totalBalance" class="text-white mobile-text-xl font-bold mb-2">$0</p>
+            <div class="flex items-center">
+              <span class="material-symbols-outlined text-green-200 text-lg mr-1">trending_up</span>
+              <span id="balanceChange" class="text-green-100 text-sm">Sin cambios</span>
+            </div>
+          </div>
+          <div class="bg-white bg-opacity-20 rounded-full p-3">
+            <span class="material-symbols-outlined text-white text-2xl">account_balance_wallet</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Métricas Rápidas - Grid 2x2 -->
+    <div class="px-4">
+      <div class="grid grid-cols-2 gap-3 mb-4">
+        <div class="mobile-card bg-white rounded-xl p-4 tap-highlight">
+          <div class="flex items-center justify-between mb-2">
+            <span class="material-symbols-outlined text-blue-600">trending_up</span>
+            <span id="totalPercentage" class="text-green-600 text-xs font-medium">0%</span>
+          </div>
+          <p class="text-gray-500 text-sm mb-1">Total Prestado</p>
+          <p id="totalLoaned" class="text-gray-900 mobile-text-lg font-bold">$0</p>
+        </div>
+
+        <div class="mobile-card bg-white rounded-xl p-4 tap-highlight">
+          <div class="flex items-center justify-between mb-2">
+            <span class="material-symbols-outlined text-orange-600">schedule</span>
+            <span id="pendingCount" class="text-orange-600 text-xs font-medium">0</span>
+          </div>
+          <p class="text-gray-500 text-sm mb-1">Pendiente</p>
+          <p id="totalPending" class="text-gray-900 mobile-text-lg font-bold">$0</p>
+        </div>
+
+        <div class="mobile-card bg-white rounded-xl p-4 tap-highlight">
+          <div class="flex items-center justify-between mb-2">
+            <span class="material-symbols-outlined text-green-600">payments</span>
+            <span id="paymentsToday" class="text-green-600 text-xs font-medium">0 pagos</span>
+          </div>
+          <p class="text-gray-500 text-sm mb-1">Cobrado Hoy</p>
+          <p id="collectedToday" class="text-gray-900 mobile-text-lg font-bold">$0</p>
+        </div>
+
+        <div class="mobile-card bg-white rounded-xl p-4 tap-highlight">
+          <div class="flex items-center justify-between mb-2">
+            <span class="material-symbols-outlined text-green-600">trending_up</span>
+            <span id="interestCount" class="text-green-600 text-xs font-medium">0 pagos</span>
+          </div>
+          <p class="text-gray-500 text-sm mb-1">% Cobrados</p>
+          <p id="interestAmount" class="text-gray-900 mobile-text-lg font-bold">$0</p>
+        </div>
+      </div>
+    </div>
+    <!-- Acciones Principales - Botones Grandes -->
+    <div class="px-4 mb-4">
+      <h2 class="text-gray-900 font-bold mobile-text-lg mb-3">Acciones Rápidas</h2>
+      <div class="space-y-3">
+        <button onclick="openNewLoanModal()"
+          class="w-full mobile-card bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl p-4 flex items-center justify-between tap-highlight">
+          <div class="flex items-center">
+            <div class="bg-white bg-opacity-20 rounded-full p-2 mr-3">
+              <span class="material-symbols-outlined text-xl">add_circle</span>
+            </div>
+            <div class="text-left">
+              <p class="font-semibold">Nuevo Préstamo</p>
+              <p class="text-blue-100 text-sm">Crear préstamo rápido</p>
+            </div>
+          </div>
+          <span class="material-symbols-outlined">chevron_right</span>
+        </button>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="openClientsModal()"
+            class="mobile-card bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-xl p-4 flex flex-col items-center tap-highlight">
+            <span class="material-symbols-outlined text-2xl mb-2">group</span>
+            <span class="font-semibold text-sm">Ver Clientes</span>
+          </button>
+
+          <button onclick="openInfoModal()"
+            class="mobile-card bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl p-4 flex flex-col items-center tap-highlight">
+            <span class="material-symbols-outlined text-2xl mb-2">info</span>
+            <span class="font-semibold text-sm">Información</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lista de Actividad Reciente -->
+    <div class="px-4 flex-1">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-gray-900 font-bold mobile-text-lg">Actividad Reciente</h2>
+
+      </div>
+
+      <div id="activityList" class="space-y-2 pb-6">
+        <!-- Actividad se carga dinámicamente -->
+        <div class="text-center text-gray-500 py-8">
+          <span class="material-symbols-outlined text-4xl mb-2 block">receipt_long</span>
+          <p class="text-sm">No hay actividad reciente</p>
+          <p class="text-xs text-gray-400">Crea tu primer préstamo para comenzar</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="sticky bottom-0 bg-white border-t border-gray-200 safe-area-bottom">
+    <div class="flex justify-around py-2">
+      <button class="flex flex-col items-center touch-target tap-highlight text-blue-600"
+        onclick="setActiveTab('dashboard')">
+        <span class="material-symbols-outlined text-2xl">dashboard</span>
+        <span class="text-xs font-medium mt-1">Panel</span>
+      </button>
+
+      <button class="flex flex-col items-center touch-target tap-highlight text-gray-500" onclick="openClientsModal()">
+        <span class="material-symbols-outlined text-2xl">group</span>
+        <span class="text-xs font-medium mt-1">Clientes</span>
+      </button>
+
+      <button class="flex flex-col items-center touch-target tap-highlight text-gray-500 relative"
+        onclick="openNewLoanModal()">
+        <div class="bg-blue-600 rounded-full p-2">
+          <span class="material-symbols-outlined text-white text-2xl">add</span>
+        </div>
+        <span class="text-xs font-medium mt-1">Nuevo</span>
+      </button>
+
+      <button class="flex flex-col items-center touch-target tap-highlight text-gray-500" onclick="openInfoModal()">
+        <span class="material-symbols-outlined text-2xl">info</span>
+        <span class="text-xs font-medium mt-1">Info</span>
+      </button>
+
+      <button class="flex flex-col items-center touch-target tap-highlight text-gray-500" onclick="toggleMenu()">
+        <span class="material-symbols-outlined text-2xl">more_horiz</span>
+        <span class="text-xs font-medium mt-1">Report</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Nuevo Préstamo -->
+  <div id="newLoanModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden modal-overlay"
+    onclick="closeNewLoanModal()">
+    <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] slide-in-up"
+      onclick="event.stopPropagation()">
+      <div class="p-4">
+        <!-- Handle bar -->
+        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-bold text-gray-900 mobile-text-lg">Nuevo Préstamo</h3>
+          <button onclick="closeNewLoanModal()" class="touch-target text-gray-500 tap-highlight">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div class="max-h-[70vh] overflow-y-auto smooth-scroll space-y-4">
+          <!-- Datos del Cliente -->
+          <div class="space-y-3">
+            <h4 class="font-semibold text-gray-800 flex items-center">
+              <span class="material-symbols-outlined text-blue-600 mr-2">person</span>
+              Datos del Cliente
+            </h4>
+
+            <div class="space-y-3">
+              <input type="text" id="clientName" placeholder="Nombre completo"
+                class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none">
+
+              <input type="tel" id="clientPhone" placeholder="Teléfono"
+                class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none">
+
+              <input type="text" id="clientId" placeholder="Cédula / ID"
+                class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none">
+
+              <textarea id="clientAddress" placeholder="Dirección completa" rows="2"
+                class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none resize-none"></textarea>
+            </div>
+          </div>
+
+          <!-- Datos del Préstamo -->
+          <div class="space-y-3">
+            <h4 class="font-semibold text-gray-800 flex items-center">
+              <span class="material-symbols-outlined text-green-600 mr-2">payments</span>
+              Datos del Préstamo
+            </h4>
+
+            <div class="grid grid-cols-2 gap-3">
+              <input type="number" id="loanAmount" placeholder="Monto ($)"
+                class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none">
+
+              <input type="number" id="interestRate" placeholder="Interés (%)" step="0.1"
+                class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none">
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <input type="number" id="loanTerm" placeholder="Plazo (días)"
+                class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none">
+
+              <select id="paymentFreq"
+                class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none">
+                <option value="">Frecuencia</option>
+                <option value="diario">Diario</option>
+                <option value="semanal">Semanal</option>
+                <option value="quincenal">Quincenal</option>
+                <option value="mensual">Mensual</option>
+              </select>
+            </div>
+
+            <input type="date" id="loanDate"
+              class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none">
+          </div>
+
+          <!-- Cálculo Automático -->
+          <div id="loanCalculation" class="bg-blue-50 rounded-xl p-4 border-l-4 border-blue-400">
+            <h4 class="font-semibold text-blue-800 mb-2">Resumen del Préstamo</h4>
+            <div class="space-y-1 text-sm">
+              <div class="flex justify-between">
+                <span class="text-blue-700">Monto prestado:</span>
+                <span id="calcAmount" class="font-semibold text-blue-900">$0</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-blue-700">Total a cobrar:</span>
+                <span id="calcTotal" class="font-semibold text-blue-900">$0</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-blue-700">Cuota por pago:</span>
+                <span id="calcPayment" class="font-semibold text-blue-900">$0</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-blue-700">Fecha vencimiento:</span>
+                <span id="calcDueDate" class="font-semibold text-blue-900">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Observaciones -->
+          <div class="space-y-3">
+            <h4 class="font-semibold text-gray-800 flex items-center">
+              <span class="material-symbols-outlined text-orange-600 mr-2">note</span>
+              Observaciones
+            </h4>
+
+            <textarea id="loanNotes" placeholder="Notas adicionales, garantías, referencias, etc." rows="3"
+              class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none resize-none"></textarea>
+          </div>
+
+          <!-- Botones de Acción -->
+          <div class="flex gap-3 pt-4 pb-2">
+            <button onclick="closeNewLoanModal()"
+              class="flex-1 p-4 border border-gray-300 rounded-xl text-gray-700 font-semibold tap-highlight">
+              Cancelar
+            </button>
+            <button onclick="saveLoan()"
+              class="flex-1 p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-semibold tap-highlight">
+              Crear Préstamo
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lista de Clientes -->
+  <div id="clientsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden modal-overlay"
+    onclick="closeClientsModal()">
+    <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] slide-in-up"
+      onclick="event.stopPropagation()">
+      <div class="p-4">
+        <!-- Handle bar -->
+        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-gray-900 mobile-text-lg">Mis Clientes</h3>
+          <button onclick="closeClientsModal()" class="touch-target text-gray-500 tap-highlight">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <!-- Buscador -->
+        <div class="mb-4">
+          <input type="text" id="clientSearch" placeholder="Buscar cliente..."
+            class="w-full p-3 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-blue-500 focus:outline-none"
+            oninput="filterClients()">
+        </div>
+
+        <!-- Lista de clientes -->
+        <div id="clientsList" class="max-h-[60vh] overflow-y-auto smooth-scroll space-y-2">
+          <!-- Los clientes se cargan dinámicamente -->
+          <div class="text-center text-gray-500 py-8">
+            <span class="material-symbols-outlined text-4xl mb-2 block">group</span>
+            <p class="text-sm">No hay clientes registrados</p>
+            <p class="text-xs text-gray-400">Crea tu primer préstamo para agregar clientes</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detalle de Cliente -->
+  <div id="clientDetailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden modal-overlay"
+    onclick="closeClientDetailModal()">
+    <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] slide-in-up"
+      onclick="event.stopPropagation()">
+      <div class="p-4">
+        <!-- Handle bar -->
+        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+
+        <div class="flex justify-between items-center mb-4">
+          <h3 id="clientDetailName" class="font-bold text-gray-900 mobile-text-lg">Cliente</h3>
+          <button onclick="closeClientDetailModal()" class="touch-target text-gray-500 tap-highlight">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <!-- Info del Cliente -->
+        <div class="bg-blue-50 rounded-xl p-4 mb-4">
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-blue-700">Teléfono:</span>
+              <span id="clientDetailPhone" class="font-semibold text-blue-900">--</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-blue-700">Cédula:</span>
+              <span id="clientDetailId" class="font-semibold text-blue-900">--</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-blue-700">Fecha del Préstamo:</span>
+              <span id="loanCreationDate" class="font-semibold text-blue-900">--</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-blue-700">Monto Original:</span>
+              <span id="originalAmount" class="font-semibold text-blue-900">$0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-blue-700">Deuda Actual:</span>
+              <span id="clientDebtTotal" class="font-semibold text-red-600">$0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-blue-700">Cuota (<span id="paymentFreqText">--</span>):</span>
+              <span id="paymentAmountText" class="font-semibold text-orange-600">$0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-blue-700">Estado:</span>
+              <span id="clientStatus" class="font-semibold text-green-600">Al día</span>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- Botones de Acción -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <button onclick="openPaymentModal()"
+            class="p-3 bg-green-600 text-white rounded-xl font-semibold tap-highlight flex items-center justify-center">
+            <span class="material-symbols-outlined mr-2">add</span>
+            Agregar Pago
+          </button>
+          <button onclick="generateReceipt()"
+            class="p-3 bg-blue-600 text-white rounded-xl font-semibold tap-highlight flex items-center justify-center">
+            <span class="material-symbols-outlined mr-2">receipt</span>
+            Recibo
+          </button>
+        </div>
+
+        <!-- Historial de Pagos -->
+        <div class="mb-6">
+          <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+            <span class="material-symbols-outlined text-green-600 mr-2">history</span>
+            Historial de Pagos
+          </h4>
+          <div id="paymentHistory" class="max-h-[32vh] overflow-y-auto smooth-scroll space-y-2 pb-6">
+            <!-- Historial se carga dinámicamente -->
+          </div>
+        </div>
+        <!-- Modal Agregar Pago -->
+        <div id="paymentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden modal-overlay"
+          onclick="closePaymentModal()">
+          <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[85vh] slide-in-up"
+            onclick="event.stopPropagation()">
+            <div class="p-4">
+              <!-- Handle bar -->
+              <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+
+              <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-gray-900 mobile-text-lg">Registrar Pago</h3>
+                <button onclick="closePaymentModal()" class="touch-target text-gray-500 tap-highlight">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+
+
+              <div class="max-h-[65vh] overflow-y-auto smooth-scroll space-y-4"></div>
+              <!-- Cliente Info -->
+              <div class="bg-gray-50 rounded-xl p-3">
+                <p class="text-sm text-gray-600">Cliente:</p>
+                <p id="paymentClientName" class="font-semibold text-gray-900">--</p>
+              </div>
+
+              <!-- Monto del Pago -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Monto del Pago</label>
+                <input type="number" id="paymentAmount" placeholder="Ej: 500"
+                  class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-green-500 focus:outline-none">
+              </div>
+
+              <!-- Tipo de Pago -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Pago</label>
+                <select id="paymentType"
+                  class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-green-500 focus:outline-none"
+                  onchange="updatePaymentSummary()">
+                  <option value="interes">Pago de Interés</option>
+                  <option value="capital">Pago a Capital</option>
+                </select>
+              </div>
+
+              <!-- Método de Pago -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Método de Pago</label>
+                <select id="paymentMethod"
+                  class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-green-500 focus:outline-none">
+                  <option value="efectivo">Efectivo</option>
+                  <option value="transferencia">Transferencia</option>
+                  <option value="deposito">Depósito</option>
+                  <option value="cheque">Cheque</option>
+                </select>
+              </div>
+
+              <!-- Notas -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Notas (Opcional)</label>
+                <textarea id="paymentNotes" placeholder="Observaciones del pago..." rows="2"
+                  class="form-input w-full p-4 border border-gray-300 rounded-xl text-base bg-gray-50 focus:bg-white focus:border-green-500 focus:outline-none resize-none"></textarea>
+              </div>
+
+              <!-- Resumen -->
+              <div id="paymentSummary" class="bg-green-50 rounded-xl p-4 border-l-4 border-green-400">
+                <h4 class="font-semibold text-green-800 mb-2">Resumen del Pago</h4>
+                <div class="space-y-1 text-sm">
+                  <div class="flex justify-between">
+                    <span class="text-green-700">Monto a pagar:</span>
+                    <span id="summaryAmount" class="font-semibold text-green-900">$0</span>
+                  </div>
+                  <div class="flex justify-between">
+                    <span class="text-green-700">Deuda restante:</span>
+                    <span id="summaryRemaining" class="font-semibold text-green-900">$0</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Botones fijos en la parte inferior -->
+              <div class="sticky bottom-0 bg-white border-t border-gray-100 p-4">
+                <div class="flex gap-3">
+                  <button onclick="closePaymentModal()"
+                    class="flex-1 p-4 border border-gray-300 rounded-xl text-gray-700 font-semibold tap-highlight">
+                    Cancelar
+                  </button>
+                  <button onclick="savePayment()"
+                    class="flex-1 p-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-semibold tap-highlight">
+                    Registrar Pago
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Notificaciones -->
+  <div id="notificationsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden modal-overlay"
+    onclick="closeNotificationsModal()">
+    <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] slide-in-up"
+      onclick="event.stopPropagation()">
+      <div class="p-4">
+        <!-- Handle bar -->
+        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="font-bold text-gray-900 mobile-text-lg">Pagos Pendientes</h3>
+          <button onclick="closeNotificationsModal()" class="touch-target text-gray-500 tap-highlight">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <!-- Lista de clientes con pagos pendientes -->
+        <div id="notificationsList" class="max-h-[70vh] overflow-y-auto smooth-scroll space-y-3">
+          <!-- Se carga dinámicamente -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Información -->
+  <div id="infoModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden modal-overlay" onclick="closeInfoModal()">
+    <div class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[90vh] slide-in-up flex flex-col"
+      onclick="event.stopPropagation()">
+
+      <!-- Header fijo -->
+      <div class="p-4 flex-shrink-0">
+        <!-- Handle bar -->
+        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4"></div>
+
+        <div class="flex justify-between items-center mb-6">
+          <h3 class="font-bold text-gray-900 mobile-text-lg">Información General</h3>
+          <button onclick="closeInfoModal()" class="touch-target text-gray-500 tap-highlight">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenido con scroll -->
+      <div class="flex-1 overflow-y-auto px-4 pb-4 smooth-scroll">
+        <!-- Préstamos por Frecuencia -->
+        <div class="mb-6">
+          <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+            <span class="material-symbols-outlined text-blue-600 mr-2">schedule</span>
+            Préstamos por Frecuencia de Pago
+          </h4>
+
+          <div class="space-y-3">
+            <div id="dailyInfo" class="bg-red-50 rounded-xl p-4 border-l-4 border-red-400">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-red-800 font-semibold">Pago Diario</p>
+                  <p class="text-red-600 text-sm">Préstamos activos</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-red-900 font-bold text-xl">0</p>
+                  <p class="text-red-700 text-sm">préstamos</p>
+                </div>
+              </div>
+            </div>
+
+            <div id="weeklyInfo" class="bg-orange-50 rounded-xl p-4 border-l-4 border-orange-400">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-orange-800 font-semibold">Pago Semanal</p>
+                  <p class="text-orange-600 text-sm">Préstamos activos</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-orange-900 font-bold text-xl">0</p>
+                  <p class="text-orange-700 text-sm">préstamos</p>
+                </div>
+              </div>
+            </div>
+
+            <div id="biweeklyInfo" class="bg-purple-50 rounded-xl p-4 border-l-4 border-purple-400">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-purple-800 font-semibold">Pago Quincenal</p>
+                  <p class="text-purple-600 text-sm">Préstamos activos</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-purple-900 font-bold text-xl">1</p>
+                  <p class="text-purple-700 text-sm">préstamos</p>
+                </div>
+              </div>
+            </div>
+
+            <div id="monthlyInfo" class="bg-blue-50 rounded-xl p-4 border-l-4 border-blue-400">
+              <div class="flex justify-between items-center">
+                <div>
+                  <p class="text-blue-800 font-semibold">Pago Mensual</p>
+                  <p class="text-blue-600 text-sm">Préstamos activos</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-blue-900 font-bold text-xl">0</p>
+                  <p class="text-blue-700 text-sm">préstamos</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tasas de Interés -->
+        <div class="mb-6">
+          <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+            <span class="material-symbols-outlined text-green-600 mr-2">percent</span>
+            Tasas de Interés Aplicadas
+          </h4>
+
+          <div id="interestRatesList" class="space-y-2">
+            <!-- Se carga dinámicamente -->
+          </div>
+        </div>
+
+        <!-- Estadísticas Generales -->
+        <div class="bg-gray-50 rounded-xl p-4 mb-4">
+          <h4 class="font-semibold text-gray-800 mb-3 flex items-center">
+            <span class="material-symbols-outlined text-gray-600 mr-2">analytics</span>
+            Estadísticas Generales
+          </h4>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="text-center">
+              <p class="text-gray-600">Total Préstamos</p>
+              <p id="totalLoansCount" class="font-bold text-2xl text-gray-900">0</p>
+            </div>
+            <div class="text-center">
+              <p class="text-gray-600">Préstamos Activos</p>
+              <p id="activeLoansInfo" class="font-bold text-2xl text-green-600">0</p>
+            </div>
+            <div class="text-center">
+              <p class="text-gray-600">Préstamos Pagados</p>
+              <p id="completedLoansInfo" class="font-bold text-2xl text-blue-600">0</p>
+            </div>
+            <div class="text-center">
+              <p class="text-gray-600">Tasa Promedio</p>
+              <p id="averageRateInfo" class="font-bold text-2xl text-purple-600">0%</p>
+            </div>
+          </div>
+        </div>
+      </div> <!-- Cierre del contenido con scroll -->
+    </div>
+  </div>
+</body>
+
+<script>
+  // Variables globales
+  let currentLoanData = {};
+  let currentClientId = null;
+  let loans = [];
+  let payments = [];
+
+  // Variables para long press
+  let longPressTimer = null;
+  let isLongPress = false;
+
+  // Inicialización al cargar la página
+  document.addEventListener('DOMContentLoaded', function () {
+    initializeApp();
+    setupEventListeners();
+    loadData();
+    updateDashboard();
+  });
+
+
+  // Función para formatear montos
+  function formatCurrency(amount) {
+    return `$${amount.toLocaleString()}`;
+  }
+
+  // Inicializar aplicación
+  function initializeApp() {
+    // Establecer fecha actual
+    const today = new Date();
+    const options = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    };
+    document.getElementById('currentDate').textContent =
+      'Hoy, ' + today.toLocaleDateString('es-ES', options);
+
+    // Cargar datos del localStorage
+    loans = getLoansFromStorage();
+    payments = getPaymentsFromStorage();
+  }
+
+  // Configurar event listeners
+  function setupEventListeners() {
+    // Event listeners para cálculo en tiempo real
+    const calcFields = ['loanAmount', 'interestRate', 'loanTerm', 'paymentFreq', 'loanDate'];
+    calcFields.forEach(fieldId => {
+      const field = document.getElementById(fieldId);
+      if (field) {
+        field.addEventListener('input', updateLoanCalculation);
+        field.addEventListener('change', updateLoanCalculation);
+      }
+    });
+
+    // Event listener para monto de pago
+    const paymentAmountField = document.getElementById('paymentAmount');
+    if (paymentAmountField) {
+      paymentAmountField.addEventListener('input', updatePaymentSummary);
+    }
+  }
+
+  // Funciones de localStorage
+  function saveLoansToStorage(loansData) {
+    localStorage.setItem('prestamos', JSON.stringify(loansData));
+  }
+
+  function getLoansFromStorage() {
+    const stored = localStorage.getItem('prestamos');
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  function savePaymentsToStorage(paymentsData) {
+    localStorage.setItem('pagos', JSON.stringify(paymentsData));
+  }
+
+  function getPaymentsFromStorage() {
+    const stored = localStorage.getItem('pagos');
+    return stored ? JSON.parse(stored) : [];
+  }
+
+  function loadData() {
+    loans = getLoansFromStorage();
+    payments = getPaymentsFromStorage();
+  }
+
+  // Funciones del Modal de Nuevo Préstamo
+  function openNewLoanModal() {
+    const modal = document.getElementById('newLoanModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+
+    // Establecer fecha de hoy por defecto
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('loanDate').value = today;
+
+    // Focus en el primer campo
+    setTimeout(() => {
+      document.getElementById('clientName').focus();
+    }, 300);
+  }
+
+  function closeNewLoanModal() {
+    const modal = document.getElementById('newLoanModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    clearLoanForm();
+  }
+
+  function clearLoanForm() {
+    document.getElementById('clientName').value = '';
+    document.getElementById('clientPhone').value = '';
+    document.getElementById('clientId').value = '';
+    document.getElementById('clientAddress').value = '';
+    document.getElementById('loanAmount').value = '';
+    document.getElementById('interestRate').value = '';
+    document.getElementById('loanTerm').value = '';
+    document.getElementById('paymentFreq').value = '';
+    document.getElementById('loanNotes').value = '';
+    updateLoanCalculation();
+  }
+
+  // Calcular préstamo en tiempo real
+  function updateLoanCalculation() {
+    const amount = parseFloat(document.getElementById('loanAmount').value) || 0;
+    const rate = parseFloat(document.getElementById('interestRate').value) || 0;
+    const term = parseInt(document.getElementById('loanTerm').value) || 0;
+    const freq = document.getElementById('paymentFreq').value;
+    const loanDate = document.getElementById('loanDate').value;
+
+    // Calcular interés por período
+    let interestPerPeriod = 0;
+    let periodsInTerm = 0;
+
+    if (freq === 'diario') {
+      interestPerPeriod = (amount * rate) / 100; // Interés diario
+      periodsInTerm = term;
+    } else if (freq === 'semanal') {
+      interestPerPeriod = (amount * rate) / 100; // Interés semanal
+      periodsInTerm = Math.ceil(term / 7);
+    } else if (freq === 'quincenal') {
+      interestPerPeriod = (amount * rate) / 100; // Interés quincenal
+      periodsInTerm = Math.ceil(term / 15);
+    } else if (freq === 'mensual') {
+      interestPerPeriod = (amount * rate) / 100; // Interés mensual
+      periodsInTerm = Math.ceil(term / 30);
+    }
+
+    const totalInterestIfOnlyInterest = interestPerPeriod * periodsInTerm;
+
+    // Calcular fecha de vencimiento
+    let dueDate = '--';
+    if (loanDate && term > 0) {
+      const date = new Date(loanDate);
+      date.setDate(date.getDate() + term);
+      dueDate = date.toLocaleDateString('es-ES');
+    }
+
+    // Actualizar display
+    document.getElementById('calcAmount').textContent = `$${amount.toLocaleString()}`;
+    document.getElementById('calcTotal').textContent = `$${(amount + totalInterestIfOnlyInterest).toLocaleString()}`;
+    document.getElementById('calcPayment').textContent = `$${interestPerPeriod.toFixed(2)}`;
+    document.getElementById('calcDueDate').textContent = dueDate;
+  }
+
+  // Guardar préstamo
+  function saveLoan() {
+    // Validar campos requeridos
+    const requiredFields = {
+      clientName: 'Nombre del cliente',
+      clientPhone: 'Teléfono',
+      clientId: 'Cédula/ID',
+      loanAmount: 'Monto del préstamo',
+      interestRate: 'Tasa de interés',
+      loanTerm: 'Plazo',
+      paymentFreq: 'Frecuencia de pago'
+    };
+
+    for (const [field, label] of Object.entries(requiredFields)) {
+      const value = document.getElementById(field).value.trim();
+      if (!value) {
+        alert(`Por favor completa el campo: ${label}`);
+        document.getElementById(field).focus();
+        return;
+      }
+    }
+
+    // Recopilar datos
+    const amount = parseFloat(document.getElementById('loanAmount').value);
+    const rate = parseFloat(document.getElementById('interestRate').value);
+
+    // Calcular interés por período
+    let interestPerPeriod = 0;
+    const freq = document.getElementById('paymentFreq').value;
+
+    if (freq === 'diario') {
+      interestPerPeriod = (amount * rate) / 100;
+    } else if (freq === 'semanal') {
+      interestPerPeriod = (amount * rate) / 100;
+    } else if (freq === 'quincenal') {
+      interestPerPeriod = (amount * rate) / 100;
+    } else if (freq === 'mensual') {
+      interestPerPeriod = (amount * rate) / 100;
+    }
+
+    currentLoanData = {
+      id: Date.now(),
+      client: {
+        name: document.getElementById('clientName').value.trim(),
+        phone: document.getElementById('clientPhone').value.trim(),
+        id: document.getElementById('clientId').value.trim(),
+        address: document.getElementById('clientAddress').value.trim()
+      },
+      loan: {
+        principal: amount, // Capital inicial
+        rate: rate, // Tasa de interés por período
+        interestPerPeriod: interestPerPeriod, // Interés que debe pagar por período
+        term: parseInt(document.getElementById('loanTerm').value),
+        frequency: freq,
+        date: document.getElementById('loanDate').value,
+        notes: document.getElementById('loanNotes').value.trim()
+      },
+      status: 'active',
+      createdAt: Date.now(),
+      currentBalance: amount, // Capital actual (va bajando con pagos a capital)
+      accruedInterest: 0, // Interés acumulado no pagado
+      payments: [] // Array de pagos realizados
+    };
+
+    // Guardar en array y localStorage
+    loans.unshift(currentLoanData);
+    saveLoansToStorage(loans);
+
+    // Mostrar confirmación
+    alert(`✅ Préstamo creado exitosamente!\n\nCliente: ${currentLoanData.client.name}\nCapital prestado: $${amount.toLocaleString()}\nInterés por ${freq}: $${interestPerPeriod.toFixed(2)}`);
+
+    // Actualizar dashboard y cerrar modal
+    updateDashboard();
+    closeNewLoanModal();
+  }
+
+  // Funciones del Dashboard
+  function updateDashboard() {
+    updateMetrics();
+    updateActivity();
+    updateNotifications();
+  }
+
+  function updateMetrics() {
+    let totalLoaned = 0;
+    let totalPending = 0;
+    let collectedToday = 0;
+    let totalInterestCollected = 0;
+    let interestPaymentsCount = 0;
+    let paymentsCount = 0;
+    let totalCapitalRecovered = 0; // Nueva variable para capital recuperado
+
+    const today = new Date().toDateString();
+
+    loans.forEach(loan => {
+      totalLoaned += loan.loan.principal;
+      totalPending += loan.currentBalance;
+
+      // Calcular capital recuperado (capital original - saldo actual)
+      totalCapitalRecovered += (loan.loan.principal - loan.currentBalance);
+
+      // Contar pagos de hoy
+      loan.payments.forEach(payment => {
+        const paymentDate = new Date(payment.date).toDateString();
+        if (paymentDate === today) {
+          collectedToday += payment.amount;
+          paymentsCount++;
+        }
+
+        // Contar intereses cobrados (solo pagos de interés)
+        if (payment.type === 'interes' && payment.amount > 0) {
+          totalInterestCollected += payment.amount;
+          interestPaymentsCount++;
+        }
+      });
+    });
+
+    // Actualizar elementos del DOM
+    document.getElementById('totalLoaned').textContent = formatCurrency(totalLoaned);
+    document.getElementById('totalPending').textContent = formatCurrency(totalPending);
+    document.getElementById('collectedToday').textContent = formatCurrency(collectedToday);
+    document.getElementById('interestAmount').textContent = formatCurrency(totalInterestCollected);
+
+    // Actualizar capital recuperado en lugar del balance
+    document.getElementById('totalBalance').textContent = formatCurrency(totalCapitalRecovered);
+
+    // Calcular porcentaje de capital recuperado
+    const recoveryPercentage = totalLoaned > 0 ? ((totalCapitalRecovered / totalLoaned) * 100).toFixed(1) : 0;
+    document.getElementById('balanceChange').textContent = `${recoveryPercentage}% recuperado`;
+
+    // Porcentaje para la tarjeta de total prestado
+    const percentage = totalLoaned > 0 ? ((collectedToday / totalLoaned) * 100).toFixed(1) : 0;
+    document.getElementById('totalPercentage').textContent = `+${percentage}%`;
+
+    document.getElementById('paymentsToday').textContent = `${paymentsCount} pagos`;
+    document.getElementById('interestCount').textContent = `${interestPaymentsCount} pagos`;
+    document.getElementById('pendingCount').textContent = loans.filter(l => l.currentBalance > 0).length;
+  }
+  function updateActivity() {
+    const activityList = document.getElementById('activityList');
+
+    if (loans.length === 0) {
+      activityList.innerHTML = `
+      <div class="text-center text-gray-500 py-8">
+        <span class="material-symbols-outlined text-4xl mb-2 block">receipt_long</span>
+        <p class="text-sm">No hay actividad reciente</p>
+        <p class="text-xs text-gray-400">Crea tu primer préstamo para comenzar</p>
+      </div>
+    `;
+      return;
+    }
+
+    // Combinar préstamos y pagos recientes
+    let activities = [];
+
+    // Agregar préstamos recientes
+    loans.slice(0, 3).forEach(loan => {
+      activities.push({
+        type: 'loan',
+        data: loan,
+        timestamp: loan.createdAt
+      });
+    });
+
+    // Agregar pagos recientes
+    loans.forEach(loan => {
+      loan.payments.slice(-2).forEach(payment => {
+        activities.push({
+          type: 'payment',
+          data: { ...payment, clientName: loan.client.name },
+          timestamp: payment.timestamp
+        });
+      });
+    });
+
+    // Ordenar por timestamp
+    activities.sort((a, b) => b.timestamp - a.timestamp);
+    activities = activities.slice(0, 5);
+
+    if (activities.length === 0) {
+      updateActivity();
+      return;
+    }
+
+    let html = '';
+    activities.forEach(activity => {
+      const timeAgo = getTimeAgo(activity.timestamp);
+
+      if (activity.type === 'loan') {
+        const loan = activity.data;
+        html += `
+    <div class="client-item mobile-card bg-white rounded-xl p-4 tap-highlight" 
+         onclick="if(!isLongPress) openClientDetail('${loan.id}')"
+         ontouchstart="handleLongPressStart(this, '${loan.id}')"
+         ontouchend="handleLongPressEnd(this)"
+         ontouchcancel="handleLongPressEnd(this)"
+         onmousedown="handleLongPressStart(this, '${loan.id}')"
+         onmouseup="handleLongPressEnd(this)"
+         onmouseleave="handleLongPressEnd(this)">
+          <div class="flex items-center">
+            <div class="bg-red-100 rounded-full p-3 mr-3">
+              <span class="material-symbols-outlined text-red-600">arrow_upward</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-gray-900 font-semibold">${loan.client.name}</p>
+              <p class="text-gray-500 text-sm">Nuevo préstamo</p>
+              <p class="text-gray-400 text-xs">${timeAgo}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-red-600 font-bold">-$${loan.loan.principal.toLocaleString()}</p>
+              <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+            </div>
+          </div>
+        </div>
+      `;
+      } else {
+        const payment = activity.data;
+        html += `
+        <div class="mobile-card bg-white rounded-xl p-4">
+          <div class="flex items-center">
+            <div class="bg-green-100 rounded-full p-3 mr-3">
+              <span class="material-symbols-outlined text-green-600">arrow_downward</span>
+            </div>
+            <div class="flex-1">
+              <p class="text-gray-900 font-semibold">${payment.clientName}</p>
+              <p class="text-gray-500 text-sm">Pago recibido</p>
+              <p class="text-gray-400 text-xs">${timeAgo}</p>
+            </div>
+            <div class="text-green-600 font-bold">+$${payment.amount.toLocaleString()}</div>
+          </div>
+        </div>
+      `;
+      }
+    });
+
+    activityList.innerHTML = html;
+  }
+
+  function updateNotifications() {
+    const clientsDue = getClientsWithPaymentsDue();
+    const count = clientsDue.length;
+
+    document.getElementById('notificationBadge').textContent = count;
+    document.getElementById('notificationBadge').style.display = count > 0 ? 'flex' : 'none';
+
+    // Guardar los clientes con pagos pendientes para mostrar después
+    window.clientsWithPaymentsDue = clientsDue;
+  }
+  function getClientsWithPaymentsDue() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let clientsDue = [];
+
+    loans.forEach(loan => {
+      if (loan.currentBalance <= 0) return; // Skip paid loans
+
+      const loanDate = new Date(loan.loan.date);
+      const frequency = loan.loan.frequency;
+      let daysBetweenPayments;
+
+      // Determinar días entre pagos según frecuencia
+      switch (frequency) {
+        case 'diario':
+          daysBetweenPayments = 1;
+          break;
+        case 'semanal':
+          daysBetweenPayments = 7;
+          break;
+        case 'quincenal':
+          daysBetweenPayments = 15;
+          break;
+        case 'mensual':
+          daysBetweenPayments = 30;
+          break;
+        default:
+          return;
+      }
+
+      // Calcular cuántos pagos debería haber hecho hasta hoy
+      const daysSinceLoan = Math.floor((today - loanDate) / (1000 * 60 * 60 * 24));
+      const expectedPayments = Math.floor(daysSinceLoan / daysBetweenPayments) + 1;
+      const actualPayments = loan.payments.filter(p => p.amount > 0).length;
+
+      // Si debe pagos, calcular la próxima fecha de pago
+      if (actualPayments < expectedPayments) {
+        const nextPaymentDate = new Date(loanDate);
+        nextPaymentDate.setDate(nextPaymentDate.getDate() + (actualPayments * daysBetweenPayments));
+
+        const daysDifference = Math.floor((today - nextPaymentDate) / (1000 * 60 * 60 * 24));
+
+        // Si la fecha de pago es hoy o está vencida
+        if (daysDifference >= 0) {
+          clientsDue.push({
+            loan: loan,
+            client: loan.client,
+            daysOverdue: daysDifference,
+            nextPaymentDate: nextPaymentDate,
+            expectedAmount: loan.loan.interestPerPeriod,
+            frequency: frequency,
+            paymentsOwed: expectedPayments - actualPayments
+          });
+        }
+      }
+    });
+
+    return clientsDue;
+  }
+
+  // Función para calcular tiempo transcurrido
+  function getTimeAgo(timestamp) {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 1) return 'Hace un momento';
+    if (minutes < 60) return `Hace ${minutes} min`;
+    if (hours < 24) return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
+    if (days < 7) return `Hace ${days} día${days > 1 ? 's' : ''}`;
+    return 'Hace más de una semana';
+  }
+
+  // Funciones del Modal de Clientes
+  function openClientsModal() {
+    const modal = document.getElementById('clientsModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    loadClientsList();
+  }
+
+  function closeClientsModal() {
+    const modal = document.getElementById('clientsModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    document.getElementById('clientSearch').value = '';
+  }
+
+  function loadClientsList() {
+    const clientsList = document.getElementById('clientsList');
+
+    if (loans.length === 0) {
+      clientsList.innerHTML = `
+      <div class="text-center text-gray-500 py-8">
+        <span class="material-symbols-outlined text-4xl mb-2 block">group</span>
+        <p class="text-sm">No hay clientes registrados</p>
+        <p class="text-xs text-gray-400">Crea tu primer préstamo para agregar clientes</p>
+      </div>
+    `;
+      return;
+    }
+
+    let html = '';
+    loans.forEach(loan => {
+      const paymentCount = loan.payments.length;
+      const statusColor = loan.currentBalance > 0 ? 'text-orange-600' : 'text-green-600';
+      const statusText = loan.currentBalance > 0 ? 'Pendiente' : 'Pagado';
+      html += `
+  <div class="client-item mobile-card bg-white rounded-xl p-4 tap-highlight" 
+       onclick="if(!isLongPress) openClientDetail('${loan.id}')"
+       ontouchstart="handleLongPressStart(this, '${loan.id}')"
+       ontouchend="handleLongPressEnd(this)"
+       ontouchcancel="handleLongPressEnd(this)"
+       onmousedown="handleLongPressStart(this, '${loan.id}')"
+       onmouseup="handleLongPressEnd(this)"
+       onmouseleave="handleLongPressEnd(this)">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <div class="bg-blue-100 rounded-full p-3 mr-3">
+              <span class="material-symbols-outlined text-blue-600">person</span>
+            </div>
+            <div>
+              <p class="text-gray-900 font-semibold">${loan.client.name}</p>
+              <p class="text-gray-500 text-sm">${loan.client.phone}</p>
+              <p class="text-gray-400 text-xs">${paymentCount} pagos realizados</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <p class="${statusColor} font-bold text-sm">${statusText}</p>
+          <p class="text-gray-900 font-semibold">$${loan.currentBalance.toLocaleString()}</p>
+            <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+          </div>
+        </div>
+      </div>
+    `;
+    });
+
+    clientsList.innerHTML = html;
+  }
+
+  function filterClients() {
+    const searchTerm = document.getElementById('clientSearch').value.toLowerCase();
+    const clientItems = document.querySelectorAll('#clientsList .client-item');
+
+    clientItems.forEach(item => {
+      const clientName = item.querySelector('.font-semibold').textContent.toLowerCase();
+      const clientPhone = item.querySelector('.text-gray-500').textContent.toLowerCase();
+
+      if (clientName.includes(searchTerm) || clientPhone.includes(searchTerm)) {
+        item.style.display = 'block';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  }
+
+  // Funciones del Modal de Detalle de Cliente
+  function openClientDetail(loanId) {
+    const loan = loans.find(l => l.id == loanId);
+    if (!loan) return;
+
+    currentClientId = loanId;
+
+    // Llenar información del cliente
+    document.getElementById('clientDetailName').textContent = loan.client.name;
+    document.getElementById('clientDetailPhone').textContent = loan.client.phone;
+    document.getElementById('clientDetailId').textContent = loan.client.id;
+    document.getElementById('clientDebtTotal').textContent = `$${loan.currentBalance.toLocaleString()}`;
+    // Mostrar fecha de creación del préstamo
+    const loanDate = new Date(loan.loan.date);
+    document.getElementById('loanCreationDate').textContent = loanDate.toLocaleDateString('es-ES');
+
+    // Estado del cliente
+    const status = loan.currentBalance > 0 ? 'Debe dinero' : 'Al día';
+    const statusColor = loan.currentBalance > 0 ? 'text-red-600' : 'text-green-600';
+    document.getElementById('clientStatus').textContent = status;
+    document.getElementById('clientStatus').className = `font-semibold ${statusColor}`;
+
+    // Calcular información de cuotas
+    const paymentInfo = calculatePaymentAmount(loan);
+    document.getElementById('originalAmount').textContent = `$${loan.loan.principal.toLocaleString()}`;
+    document.getElementById('paymentFreqText').textContent = paymentInfo.frequency;
+    document.getElementById('paymentAmountText').textContent = `$${paymentInfo.amount.toFixed(2)}`;
+
+    // Cargar historial de pagos
+    loadPaymentHistory(loan);
+
+    // Cerrar modal de clientes y abrir detalle
+    closeClientsModal();
+    const modal = document.getElementById('clientDetailModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+  }
+  function calculatePaymentAmount(loan) {
+    const { interestPerPeriod, frequency } = loan.loan;
+
+    let freqText = '';
+    switch (frequency) {
+      case 'diario':
+        freqText = 'diaria';
+        break;
+      case 'semanal':
+        freqText = 'semanal';
+        break;
+      case 'quincenal':
+        freqText = 'quincenal';
+        break;
+      case 'mensual':
+        freqText = 'mensual';
+        break;
+      default:
+        freqText = 'única';
+    }
+
+    return {
+      amount: interestPerPeriod,
+      frequency: freqText,
+      totalPayments: 1
+    };
+  }
+
+  function closeClientDetailModal() {
+    const modal = document.getElementById('clientDetailModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    currentClientId = null;
+  }
+
+  function loadPaymentHistory(loan) {
+    const historyContainer = document.getElementById('paymentHistory');
+
+    if (loan.payments.length === 0) {
+      historyContainer.innerHTML = `
+      <div class="text-center text-gray-500 py-4">
+        <span class="material-symbols-outlined text-2xl mb-1 block">receipt</span>
+        <p class="text-sm">No hay pagos registrados</p>
+      </div>
+    `;
+      return;
+    }
+
+    let html = '';
+    loan.payments.slice().reverse().forEach(payment => {
+      const date = new Date(payment.date);
+      const formattedDate = date.toLocaleDateString('es-ES');
+      const formattedTime = date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+
+      // Determinar colores según el monto
+      const isZeroPayment = payment.amount === 0;
+      const bgColor = isZeroPayment ? 'bg-red-50' : 'bg-green-50';
+      const borderColor = isZeroPayment ? 'border-red-400' : 'border-green-400';
+      const textColor = isZeroPayment ? 'text-red-800' : 'text-green-800';
+      const secondaryColor = isZeroPayment ? 'text-red-600' : 'text-green-600';
+      const lightColor = isZeroPayment ? 'text-red-700' : 'text-green-700';
+      const badgeColor = isZeroPayment ? 'bg-red-200' : 'bg-green-200';
+
+      html += `
+  <div class="${bgColor} rounded-xl p-4 border-l-4 ${borderColor} mb-3">
+    <div class="flex justify-between items-start mb-2">
+      <span class="font-semibold ${textColor} text-lg">
+        ${isZeroPayment ? 'SIN PAGO - $0' : '$' + payment.amount.toLocaleString()}
+      </span>
+      <span class="${secondaryColor} text-sm font-medium">${payment.type === 'capital' ? 'Capital' : 'Interés'}</span>
+    </div>
+    <div class="flex justify-between items-center text-sm ${lightColor} mb-1">
+      <span class="font-medium">${formattedDate} - ${formattedTime}</span>
+      <span class="${badgeColor} px-2 py-1 rounded text-xs">${payment.method}</span>
+    </div>
+    ${payment.notes ? `<p class="text-sm ${secondaryColor} mt-2 italic">${payment.notes}</p>` : ''}
+    ${isZeroPayment ? `<p class="text-sm ${secondaryColor} mt-1 font-medium">⚠️ No realizó pago en esta fecha</p>` : ''}
+  </div>
+`;
+    });
+
+    historyContainer.innerHTML = html;
+  }
+
+  function callClient() {
+    const loan = loans.find(l => l.id == currentClientId);
+    if (loan) {
+      window.location.href = `tel:${loan.client.phone}`;
+    }
+  }
+
+  // Funciones del Modal de Pagos
+  function openPaymentModal() {
+    const loan = loans.find(l => l.id == currentClientId);
+    if (!loan) return;
+
+    document.getElementById('paymentClientName').textContent = loan.client.name;
+    document.getElementById('paymentAmount').value = '';
+    document.getElementById('paymentType').value = 'cuota';
+    document.getElementById('paymentMethod').value = 'efectivo';
+    document.getElementById('paymentNotes').value = '';
+
+    updatePaymentSummary();
+
+    const modal = document.getElementById('paymentModal');
+    modal.classList.remove('hidden');
+  }
+
+  function closePaymentModal() {
+    const modal = document.getElementById('paymentModal');
+    modal.classList.add('hidden');
+  }
+
+  function updatePaymentSummary() {
+    const amount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+    const paymentType = document.getElementById('paymentType').value;
+    const loan = loans.find(l => l.id == currentClientId);
+
+    if (loan) {
+      let remaining;
+      if (paymentType === 'capital') {
+        remaining = Math.max(0, loan.currentBalance - amount);
+      } else {
+        remaining = loan.currentBalance; // Pago de interés no reduce el capital
+      }
+
+      document.getElementById('summaryAmount').textContent = `$${amount.toLocaleString()}`;
+      document.getElementById('summaryRemaining').textContent = `$${remaining.toLocaleString()}`;
+    }
+  }
+
+  function savePayment() {
+    const amount = parseFloat(document.getElementById('paymentAmount').value);
+    const paymentType = document.getElementById('paymentType').value;
+
+    if (amount === null || amount === undefined || amount < 0) {
+      alert('Por favor ingresa un monto válido');
+      return;
+    }
+
+    const loan = loans.find(l => l.id == currentClientId);
+    if (!loan) return;
+
+    // Validar según el tipo de pago
+    if (paymentType === 'capital' && amount > loan.currentBalance) {
+      if (!confirm(`El monto ($${amount.toLocaleString()}) es mayor al capital adeudado ($${loan.currentBalance.toLocaleString()}). ¿Continuar?`)) {
+        return;
+      }
+    }
+
+    const payment = {
+      id: Date.now(),
+      amount: amount,
+      type: paymentType,
+      method: document.getElementById('paymentMethod').value,
+      notes: document.getElementById('paymentNotes').value.trim(),
+      date: Date.now(),
+      timestamp: Date.now()
+    };
+
+    // Procesar pago según tipo (solo si es mayor a 0)
+    if (amount > 0 && paymentType === 'capital') {
+      // Pago a capital: reduce la deuda
+      loan.currentBalance = Math.max(0, loan.currentBalance - amount);
+    }
+    // Si es pago de interés o monto 0, no se reduce el capital
+
+    // Agregar pago al historial
+    loan.payments.push(payment);
+
+    // Si se pagó todo el capital, marcar como completado
+    if (loan.currentBalance === 0) {
+      loan.status = 'completed';
+    }
+
+    // Guardar cambios
+    saveLoansToStorage(loans);
+
+    let resultMessage;
+    if (amount === 0) {
+      resultMessage = `📝 Registro sin pago guardado!\n\nFecha: ${new Date().toLocaleDateString('es-ES')}\nMotivo: Cliente no pagó\nDeuda sigue siendo: $${loan.currentBalance.toLocaleString()}`;
+    } else if (paymentType === 'capital') {
+      resultMessage = `✅ Pago a capital registrado!\n\nMonto: $${amount.toLocaleString()}\nDeuda restante: $${loan.currentBalance.toLocaleString()}`;
+    } else {
+      resultMessage = `✅ Pago de interés registrado!\n\nMonto: $${amount.toLocaleString()}\nCapital sigue siendo: $${loan.currentBalance.toLocaleString()}`;
+    }
+
+    alert(resultMessage);
+
+    // Actualizar vistas
+    updateDashboard();
+    loadPaymentHistory(loan);
+
+    // Actualizar info del cliente en el modal
+    document.getElementById('clientDebtTotal').textContent = `$${loan.currentBalance.toLocaleString()}`;
+    const status = loan.currentBalance > 0 ? 'Debe dinero' : 'Al día';
+    const statusColor = loan.currentBalance > 0 ? 'text-red-600' : 'text-green-600';
+    document.getElementById('clientStatus').textContent = status;
+    document.getElementById('clientStatus').className = `font-semibold ${statusColor}`;
+
+    closePaymentModal();
+  }
+
+  // Generar recibo como imagen
+  function generateReceipt() {
+    const loan = loans.find(l => l.id == currentClientId);
+    if (!loan) return;
+
+    createReceiptImage(loan);
+  }
+
+  function createReceiptImage(loan) {
+    // Crear canvas Full HD
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Configurar tamaño Full HD (escala 2x)
+    const scale = 2;
+    canvas.width = 1200 * scale;  // 2400px
+    canvas.height = 1600 * scale; // 3200px
+
+    // Fondo blanco
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Configuración de fuentes y colores (escalados)
+    const primaryColor = '#1f2937';
+    const secondaryColor = '#6b7280';
+    const accentColor = '#3b82f6';
+
+    let y = 80 * scale;
+
+    // Header con título (escalado)
+    ctx.fillStyle = accentColor;
+    ctx.fillRect(0, 0, canvas.width, 200 * scale);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${48 * scale}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('RECIBO DE PRÉSTAMO', canvas.width / 2, 60 * scale);
+
+    // Obtener el título de la app desde el HTML
+    const appTitle = document.querySelector('h1').textContent || 'Mi Panel';
+    ctx.font = `bold ${32 * scale}px Arial`;
+    ctx.fillText(`Prestamista: ${appTitle}`, canvas.width / 2, 110 * scale);
+
+    ctx.font = `${28 * scale}px Arial`;
+    const currentDate = new Date().toLocaleDateString('es-ES');
+    const currentTime = new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    ctx.fillText(`${currentDate} - ${currentTime}`, canvas.width / 2, 150 * scale);
+
+    y = 240 * scale;
+
+    // Función helper para texto (escalada)
+    function addText(text, fontSize = 14, color = primaryColor, bold = false, align = 'left') {
+      ctx.fillStyle = color;
+      ctx.font = `${bold ? 'bold ' : ''}${fontSize * scale}px Arial`;
+      ctx.textAlign = align;
+      ctx.fillText(text, align === 'center' ? canvas.width / 2 : 80 * scale, y);
+      y += (fontSize + 8) * scale;
+    }
+
+    function addSection(title) {
+      y += 20 * scale;
+      ctx.fillStyle = '#f3f4f6';
+      ctx.fillRect(40 * scale, y - 40 * scale, canvas.width - 80 * scale, 60 * scale);
+
+      ctx.fillStyle = primaryColor;
+      ctx.font = `bold ${32 * scale}px Arial`;
+      ctx.textAlign = 'left';
+      ctx.fillText(title, 60 * scale, y - 10 * scale);
+      y += 40 * scale;
+    }
+
+    // Datos del Cliente
+    addSection('DATOS DEL CLIENTE');
+    addText(`Nombre: ${loan.client.name}`, 14, primaryColor, true);
+    addText(`Teléfono: ${loan.client.phone}`);
+    addText(`Cédula: ${loan.client.id}`);
+    addText(`Dirección: ${loan.client.address}`);
+
+    // Datos del Préstamo
+    addSection('DATOS DEL PRÉSTAMO');
+    addText(`Capital Original: $${loan.loan.principal.toLocaleString()}`, 14, primaryColor, true);
+    addText(`Tasa de Interés: ${loan.loan.rate}% ${loan.loan.frequency}`);
+    addText(`Fecha del Préstamo: ${new Date(loan.loan.date).toLocaleDateString('es-ES')}`);
+    addText(`Plazo: ${loan.loan.term} días`);
+    addText(`Saldo Actual: $${loan.currentBalance.toLocaleString()}`, 16, loan.currentBalance > 0 ? '#dc2626' : '#059669', true);
+
+    // Historial de Pagos
+    addSection('HISTORIAL DE PAGOS');
+
+    if (loan.payments.length === 0) {
+      addText('No hay pagos registrados', 12, secondaryColor);
+    } else {
+      // Headers de tabla (escalados)
+      ctx.fillStyle = '#e5e7eb';
+      ctx.fillRect(40 * scale, y, canvas.width - 80 * scale, 50 * scale);
+
+      ctx.fillStyle = primaryColor;
+      ctx.font = `bold ${24 * scale}px Arial`;
+      ctx.textAlign = 'left';
+      ctx.fillText('FECHA', 60 * scale, y + 30 * scale);
+      ctx.fillText('MONTO', 360 * scale, y + 30 * scale);
+      ctx.fillText('TIPO', 560 * scale, y + 30 * scale);
+      ctx.fillText('MÉTODO', 840 * scale, y + 30 * scale);
+
+      y += 70 * scale;
+
+      // Pagos (máximo 10 para que quepan)
+      const paymentsToShow = loan.payments.slice(-10);
+      paymentsToShow.forEach((payment, index) => {
+        const paymentDate = new Date(payment.date);
+        const bgColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
+
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(40 * scale, y - 30 * scale, canvas.width - 80 * scale, 50 * scale);
+
+        ctx.fillStyle = primaryColor;
+        ctx.font = `${22 * scale}px Arial`;
+        ctx.textAlign = 'left';
+
+        ctx.fillText(paymentDate.toLocaleDateString('es-ES'), 60 * scale, y);
+        ctx.fillText(`$${payment.amount.toLocaleString()}`, 360 * scale, y);
+        ctx.fillText(payment.type === 'capital' ? 'Capital' : 'Interés', 560 * scale, y);
+        ctx.fillText(payment.method, 840 * scale, y);
+
+        y += 50 * scale;
+      });
+
+      if (loan.payments.length > 10) {
+        addText(`... y ${loan.payments.length - 10} pagos más`, 10, secondaryColor);
+      }
+    }
+
+    // Resumen
+    y += 40 * scale;
+    addSection('RESUMEN');
+    const totalPaid = loan.payments.reduce((sum, p) => sum + p.amount, 0);
+    addText(`Total Pagado: $${totalPaid.toLocaleString()}`, 14, primaryColor, true);
+    addText(`Saldo Pendiente: $${loan.currentBalance.toLocaleString()}`, 14, loan.currentBalance > 0 ? '#dc2626' : '#059669', true);
+    addText(`Estado: ${loan.currentBalance === 0 ? 'CANCELADO' : 'VIGENTE'}`, 14, loan.currentBalance === 0 ? '#059669' : '#f59e0b', true);
+
+    // Footer
+    y = canvas.height - 120 * scale;
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillRect(0, y, canvas.width, 120 * scale);
+
+    ctx.fillStyle = secondaryColor;
+    ctx.font = `${24 * scale}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Generado automáticamente por MiPréstamo App', canvas.width / 2, y + 50 * scale);
+    ctx.fillText(`ID: ${loan.id}`, canvas.width / 2, y + 90 * scale);
+
+    // Convertir a blob y compartir
+    canvas.toBlob(function (blob) {
+      shareReceiptImage(blob, loan);
+    }, 'image/png');
+  }
+  function shareReceiptImage(blob, loan) {
+    const message = `Recibo de Préstamo - ${loan.client.name}
+
+Capital Original: $${loan.loan.principal.toLocaleString()}
+Saldo Actual: $${loan.currentBalance.toLocaleString()}
+Fecha: ${new Date().toLocaleDateString('es-ES')}
+
+Generado por MiPréstamo App`;
+
+    // Verificar si el dispositivo soporta Web Share API
+    if (navigator.share && navigator.canShare) {
+      // Crear archivo para compartir
+      const file = new File([blob], `Recibo_${loan.client.name.replace(/\s+/g, '_')}.png`, {
+        type: 'image/png',
+      });
+
+      // Verificar si se puede compartir archivos
+      if (navigator.canShare({ files: [file] })) {
+        navigator.share({
+          title: 'Recibo de Préstamo',
+          text: message,
+          files: [file]
+        }).then(() => {
+          console.log('Recibo compartido exitosamente');
+        }).catch((error) => {
+          console.log('Error al compartir:', error);
+          // Fallback: descargar imagen
+          downloadImageFallback(blob, loan);
+        });
+      } else {
+        // Si no puede compartir archivos, compartir solo texto
+        navigator.share({
+          title: 'Recibo de Préstamo',
+          text: message,
+        }).then(() => {
+          console.log('Mensaje compartido exitosamente');
+          // También descargar la imagen
+          downloadImageFallback(blob, loan);
+        }).catch((error) => {
+          console.log('Error al compartir:', error);
+          downloadImageFallback(blob, loan);
+        });
+      }
+    } else {
+      // Fallback para navegadores que no soportan Web Share API
+      downloadImageFallback(blob, loan);
+
+      // Intentar abrir selector de apps con el texto
+      setTimeout(() => {
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+      }, 1000);
+    }
+  }
+
+  function downloadImageFallback(blob, loan) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Recibo_${loan.client.name.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    alert('Recibo descargado. En Android, puedes encontrarlo en tu galería y compartirlo desde ahí.');
+  }
+  // Funciones para long press (eliminar registros)
+  function handleLongPressStart(element, loanId) {
+    isLongPress = false;
+    element.classList.add('long-press');
+
+    longPressTimer = setTimeout(() => {
+      isLongPress = true;
+      element.classList.add('delete-confirm');
+      confirmDeleteLoan(loanId);
+    }, 1000); // 1 segundo de press
+  }
+
+  function handleLongPressEnd(element) {
+    clearTimeout(longPressTimer);
+    element.classList.remove('long-press');
+    element.classList.remove('delete-confirm');
+  }
+
+  function confirmDeleteLoan(loanId) {
+    const loan = loans.find(l => l.id == loanId);
+    if (!loan) return;
+
+    const totalPaid = loan.payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const hasPayments = loan.payments.length > 0;
+
+    let message = `¿Eliminar el préstamo de ${loan.client.name}?\n\n`;
+    message += `Monto original: $${loan.loan.principal.toLocaleString()}\n`;
+    message += `Deuda actual: $${loan.currentBalance.toLocaleString()}\n`;
+
+    if (hasPayments) {
+      message += `Pagos realizados: ${loan.payments.length}\n`;
+      message += `Total pagado: $${totalPaid.toLocaleString()}\n\n`;
+      message += `⚠️ ATENCIÓN: Este préstamo tiene pagos registrados.\n`;
+      message += `Al eliminarlo se perderá todo el historial.`;
+    }
+
+    if (confirm(message)) {
+      deleteLoan(loanId);
+    }
+  }
+
+  function deleteLoan(loanId) {
+    // Eliminar el préstamo del array
+    loans = loans.filter(l => l.id != loanId);
+
+    // Guardar cambios en localStorage
+    saveLoansToStorage(loans);
+
+    // Actualizar vistas
+    updateDashboard();
+
+    // Cerrar modales si están abiertos
+    if (currentClientId == loanId) {
+      closeClientDetailModal();
+      currentClientId = null;
+    }
+
+    // Recargar lista de clientes si está abierta
+    const clientsModal = document.getElementById('clientsModal');
+    if (!clientsModal.classList.contains('hidden')) {
+      loadClientsList();
+    }
+
+    alert('✅ Préstamo eliminado correctamente');
+  }
+
+  // Funciones adicionales
+  function openPaymentsModal() {
+    alert('Módulo de pagos del día (próximamente)');
+  }
+
+  function viewAllActivity() {
+    alert('Vista completa de actividad (próximamente)');
+  }
+
+  function viewDetail(type) {
+    const messages = {
+      'balance': 'Capital recuperado: Suma de todos los abonos a capital realizados por tus clientes',
+      'total': 'Desglose de préstamos totales',
+      'pending': 'Lista de pagos pendientes',
+      'collected': 'Pagos cobrados hoy',
+      'interest': 'Total de intereses cobrados - Tu ganancia'
+    };
+    alert(messages[type] || 'Función en desarrollo');
+  }
+
+  function toggleMenu() {
+    createGlobalReportImage();
+  }
+
+  function createGlobalReportImage() {
+    const loans = getLoansFromStorage();
+
+    if (loans.length === 0) {
+      alert('No hay préstamos para generar reporte');
+      return;
+    }
+
+    // Crear canvas con escala Full HD
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Configurar escala Full HD
+    const scale = 2;
+    const baseHeight = 600;
+    const loanHeight = 120; // Altura por préstamo SIN escalar
+    canvas.width = 800 * scale;
+    canvas.height = (baseHeight + (loans.length * loanHeight)) * scale;
+
+    // Fondo blanco
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const primaryColor = '#1f2937';
+    const secondaryColor = '#6b7280';
+    const accentColor = '#3b82f6';
+
+    let y = 40 * scale;
+
+    // Header principal (escalado)
+    ctx.fillStyle = accentColor;
+    ctx.fillRect(0, 0, canvas.width, 120 * scale);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${28 * scale}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('REPORTE GLOBAL DE PRÉSTAMOS', canvas.width / 2, 35 * scale);
+
+    // Obtener el título de la app desde el HTML
+    const appTitle = document.querySelector('h1').textContent || 'Mi Panel';
+    ctx.font = `bold ${18 * scale}px Arial`;
+    ctx.fillText(`Prestamista: ${appTitle}`, canvas.width / 2, 60 * scale);
+
+    ctx.font = `${16 * scale}px Arial`;
+    const currentDate = new Date().toLocaleDateString('es-ES');
+    ctx.fillText(`Fecha: ${currentDate}`, canvas.width / 2, 85 * scale);
+
+    // Resumen general
+    y = 150 * scale;
+    const totalLoaned = loans.reduce((sum, loan) => sum + loan.loan.principal, 0);
+    const totalPending = loans.reduce((sum, loan) => sum + loan.currentBalance, 0);
+    const totalPaid = loans.reduce((sum, loan) => sum + loan.payments.reduce((pSum, p) => pSum + p.amount, 0), 0);
+
+    ctx.fillStyle = '#f3f4f6';
+    ctx.fillRect(40 * scale, y - 10 * scale, canvas.width - 80 * scale, 80 * scale);
+
+    ctx.fillStyle = primaryColor;
+    ctx.font = `bold ${18 * scale}px Arial`;
+    ctx.textAlign = 'left';
+    ctx.fillText('RESUMEN GENERAL', 60 * scale, y + 15 * scale);
+
+    ctx.font = `${14 * scale}px Arial`;
+    ctx.fillText(`Total de préstamos: ${loans.length}`, 60 * scale, y + 35 * scale);
+    ctx.fillText(`Capital prestado: $${totalLoaned.toLocaleString()}`, 60 * scale, y + 50 * scale);
+
+    ctx.textAlign = 'right';
+    ctx.fillText(`Total pagado: $${totalPaid.toLocaleString()}`, canvas.width - 60 * scale, y + 35 * scale);
+    ctx.fillText(`Saldo pendiente: $${totalPending.toLocaleString()}`, canvas.width - 60 * scale, y + 50 * scale);
+
+    y += 100 * scale;
+
+    // Lista de préstamos
+    ctx.fillStyle = primaryColor;
+    ctx.font = `bold ${20 * scale}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('DETALLE POR CLIENTE', canvas.width / 2, y);
+    y += 40 * scale;
+
+    loans.forEach((loan, index) => {
+      const loanTotalPaid = loan.payments.reduce((sum, p) => sum + p.amount, 0);
+
+      // Fondo alternado (escalado)
+      ctx.fillStyle = index % 2 === 0 ? '#f9fafb' : '#ffffff';
+      ctx.fillRect(40 * scale, y - 10 * scale, canvas.width - 80 * scale, 100 * scale);
+
+      // Borde izquierdo de color (escalado)
+      const statusColor = loan.currentBalance === 0 ? '#059669' : '#dc2626';
+      ctx.fillStyle = statusColor;
+      ctx.fillRect(40 * scale, y - 10 * scale, 6 * scale, 100 * scale);
+
+      // Información del cliente (escalada)
+      ctx.fillStyle = primaryColor;
+      ctx.font = `bold ${16 * scale}px Arial`;
+      ctx.textAlign = 'left';
+      ctx.fillText(`${index + 1}. ${loan.client.name}`, 60 * scale, y + 10 * scale);
+
+      ctx.font = `${12 * scale}px Arial`;
+      ctx.fillStyle = secondaryColor;
+      ctx.fillText(`Tel: ${loan.client.phone} | Cédula: ${loan.client.id}`, 60 * scale, y + 25 * scale);
+
+      // Datos financieros (escalados)
+      ctx.fillStyle = primaryColor;
+      ctx.font = `${14 * scale}px Arial`;
+      ctx.fillText(`Capital: $${loan.loan.principal.toLocaleString()}`, 60 * scale, y + 45 * scale);
+      ctx.fillText(`Pagado: $${loanTotalPaid.toLocaleString()}`, 60 * scale, y + 60 * scale);
+      ctx.fillText(`Saldo: $${loan.currentBalance.toLocaleString()}`, 60 * scale, y + 75 * scale);
+
+      // Estado y fecha (escalados)
+      ctx.textAlign = 'right';
+      ctx.fillStyle = statusColor;
+      ctx.font = `bold ${14 * scale}px Arial`;
+      ctx.fillText(loan.currentBalance === 0 ? 'CANCELADO' : 'VIGENTE', canvas.width - 60 * scale, y + 15 * scale);
+
+      ctx.fillStyle = secondaryColor;
+      ctx.font = `${12 * scale}px Arial`;
+      ctx.fillText(`Fecha: ${new Date(loan.loan.date).toLocaleDateString('es-ES')}`, canvas.width - 60 * scale, y + 35 * scale);
+      ctx.fillText(`Pagos realizados: ${loan.payments.length}`, canvas.width - 60 * scale, y + 50 * scale);
+      ctx.fillText(`Interés: ${loan.loan.rate}% ${loan.loan.frequency}`, canvas.width - 60 * scale, y + 65 * scale);
+
+      y += 120 * scale;
+    });
+
+    // Footer (escalado)
+    y += 20 * scale;
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillRect(0, y, canvas.width, 60 * scale);
+
+    ctx.fillStyle = secondaryColor;
+    ctx.font = `${14 * scale}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Generado automáticamente por MiPréstamo App', canvas.width / 2, y + 25 * scale);
+    ctx.fillText(`Total de registros: ${loans.length} | Generado: ${new Date().toLocaleString('es-ES')}`, canvas.width / 2, y + 45 * scale);
+
+    // Convertir a blob y compartir
+    canvas.toBlob(function (blob) {
+      shareGlobalReport(blob);
+    }, 'image/png');
+  }
+  function shareGlobalReport(blob) {
+    const loans = getLoansFromStorage();
+    const totalLoaned = loans.reduce((sum, loan) => sum + loan.loan.principal, 0);
+    const totalPending = loans.reduce((sum, loan) => sum + loan.currentBalance, 0);
+
+    const message = `Reporte Global de Préstamos
+
+Fecha: ${new Date().toLocaleDateString('es-ES')}
+Total de préstamos: ${loans.length}
+Capital prestado: $${totalLoaned.toLocaleString()}
+Saldo pendiente: $${totalPending.toLocaleString()}
+
+Reporte completo generado por MiPréstamo App`;
+
+    // Usar Web Share API si está disponible
+    if (navigator.share && navigator.canShare) {
+      const file = new File([blob], `Reporte_Global_${new Date().toISOString().split('T')[0]}.png`, {
+        type: 'image/png',
+      });
+
+      if (navigator.canShare({ files: [file] })) {
+        navigator.share({
+          title: 'Reporte Global de Préstamos',
+          text: message,
+          files: [file]
+        }).then(() => {
+          console.log('Reporte compartido exitosamente');
+        }).catch((error) => {
+          console.log('Error al compartir:', error);
+          downloadImageFallback(blob);
+        });
+      } else {
+        navigator.share({
+          title: 'Reporte Global de Préstamos',
+          text: message,
+        }).then(() => {
+          downloadImageFallback(blob);
+        }).catch((error) => {
+          downloadImageFallback(blob);
+        });
+      }
+    } else {
+      downloadImageFallback(blob);
+    }
+  }
+
+  function downloadImageFallback(blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Reporte_Global_${new Date().toISOString().split('T')[0]}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    alert('Reporte descargado. Puedes compartirlo desde tu galería.');
+  }
+
+  function toggleNotifications() {
+    const clientsDue = window.clientsWithPaymentsDue || [];
+
+    if (clientsDue.length === 0) {
+      alert('🟢 ¡Excelente!\n\nTodos tus clientes están al día con sus pagos.');
+      return;
+    }
+
+    openNotificationsModal();
+  }
+
+  function openNotificationsModal() {
+    const modal = document.getElementById('notificationsModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    loadNotificationsList();
+  }
+
+  function closeNotificationsModal() {
+    const modal = document.getElementById('notificationsModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  }
+
+  function loadNotificationsList() {
+    const notificationsList = document.getElementById('notificationsList');
+    const clientsDue = window.clientsWithPaymentsDue || [];
+
+    if (clientsDue.length === 0) {
+      notificationsList.innerHTML = `
+      <div class="text-center text-gray-500 py-8">
+        <span class="material-symbols-outlined text-4xl mb-2 block text-green-500">check_circle</span>
+        <p class="text-sm">¡Todos al día!</p>
+        <p class="text-xs text-gray-400">No hay pagos pendientes</p>
+      </div>
+    `;
+      return;
+    }
+
+    let html = '';
+    clientsDue.forEach(item => {
+      const { client, daysOverdue, expectedAmount, frequency, paymentsOwed } = item;
+
+      // Determinar color según días de retraso
+      let urgencyColor, urgencyText, bgColor;
+      if (daysOverdue === 0) {
+        urgencyColor = 'text-yellow-600';
+        urgencyText = 'Pago HOY';
+        bgColor = 'bg-yellow-50 border-yellow-200';
+      } else if (daysOverdue <= 3) {
+        urgencyColor = 'text-orange-600';
+        urgencyText = `${daysOverdue} día${daysOverdue > 1 ? 's' : ''} atrasado`;
+        bgColor = 'bg-orange-50 border-orange-200';
+      } else {
+        urgencyColor = 'text-red-600';
+        urgencyText = `${daysOverdue} días atrasado`;
+        bgColor = 'bg-red-50 border-red-200';
+      }
+
+      html += `
+      <div class="mobile-card ${bgColor} border-2 rounded-xl p-4 tap-highlight" 
+           onclick="openClientDetailFromNotification('${item.loan.id}')">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center">
+            <div class="bg-white rounded-full p-2 mr-3 shadow-sm">
+              <span class="material-symbols-outlined text-gray-600">person</span>
+            </div>
+            <div>
+              <p class="text-gray-900 font-semibold">${client.name}</p>
+              <p class="text-gray-600 text-sm">${client.phone}</p>
+            </div>
+          </div>
+          <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+        </div>
+        
+        <div class="bg-white rounded-lg p-3 border border-gray-200">
+          <div class="flex justify-between items-center mb-2">
+            <span class="${urgencyColor} font-bold text-sm">${urgencyText}</span>
+            <span class="text-gray-500 text-xs">${frequency}</span>
+          </div>
+          
+          <div class="flex justify-between items-center">
+            <span class="text-gray-700 text-sm">Monto esperado:</span>
+            <span class="font-bold text-gray-900">$${expectedAmount.toFixed(2)}</span>
+          </div>
+          
+          ${paymentsOwed > 1 ? `
+          <div class="flex justify-between items-center mt-1">
+            <span class="text-gray-700 text-sm">Pagos pendientes:</span>
+            <span class="font-bold text-red-600">${paymentsOwed}</span>
+          </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    });
+
+    notificationsList.innerHTML = html;
+  }
+
+  function openInfoModal() {
+    const modal = document.getElementById('infoModal');
+    modal.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    loadInfoData();
+  }
+
+  function closeInfoModal() {
+    const modal = document.getElementById('infoModal');
+    modal.classList.add('hidden');
+    document.body.style.overflow = 'auto';
+  }
+
+  function loadInfoData() {
+    // Contadores por frecuencia
+    let dailyCount = 0;
+    let weeklyCount = 0;
+    let biweeklyCount = 0;
+    let monthlyCount = 0;
+
+    // Estadísticas generales
+    let totalLoans = loans.length;
+    let activeLoans = 0;
+    let completedLoans = 0;
+    let totalRates = 0;
+
+    // Tasas de interés únicas
+    let interestRates = {};
+
+    loans.forEach(loan => {
+      const { frequency, rate } = loan.loan;
+      const isActive = loan.currentBalance > 0;
+
+      // Contar por frecuencia (solo activos)
+      if (isActive) {
+        activeLoans++;
+        switch (frequency) {
+          case 'diario':
+            dailyCount++;
+            break;
+          case 'semanal':
+            weeklyCount++;
+            break;
+          case 'quincenal':
+            biweeklyCount++;
+            break;
+          case 'mensual':
+            monthlyCount++;
+            break;
+        }
+      } else {
+        completedLoans++;
+      }
+
+      // Recopilar tasas de interés
+      const rateKey = `${rate}% ${frequency}`;
+      if (!interestRates[rateKey]) {
+        interestRates[rateKey] = {
+          rate: rate,
+          frequency: frequency,
+          count: 0,
+          active: 0
+        };
+      }
+      interestRates[rateKey].count++;
+      if (isActive) {
+        interestRates[rateKey].active++;
+      }
+
+      totalRates += rate;
+    });
+
+    // Actualizar contadores por frecuencia
+    document.getElementById('dailyInfo').querySelector('.text-xl').textContent = dailyCount;
+    document.getElementById('weeklyInfo').querySelector('.text-xl').textContent = weeklyCount;
+    document.getElementById('biweeklyInfo').querySelector('.text-xl').textContent = biweeklyCount;
+    document.getElementById('monthlyInfo').querySelector('.text-xl').textContent = monthlyCount;
+
+    // Actualizar estadísticas generales
+    document.getElementById('totalLoansCount').textContent = totalLoans;
+    document.getElementById('activeLoansInfo').textContent = activeLoans;
+    document.getElementById('completedLoansInfo').textContent = completedLoans;
+
+    const averageRate = totalLoans > 0 ? (totalRates / totalLoans).toFixed(1) : 0;
+    document.getElementById('averageRateInfo').textContent = `${averageRate}%`;
+
+    // Mostrar tasas de interés
+    const ratesList = document.getElementById('interestRatesList');
+    let ratesHtml = '';
+
+    Object.values(interestRates).forEach(rateInfo => {
+      const frequencyText = {
+        'diario': 'Diario',
+        'semanal': 'Semanal',
+        'quincenal': 'Quincenal',
+        'mensual': 'Mensual'
+      }[rateInfo.frequency] || rateInfo.frequency;
+
+      ratesHtml += `
+      <div class="bg-white rounded-lg p-3 border border-gray-200">
+        <div class="flex justify-between items-center">
+          <div>
+            <p class="font-semibold text-gray-900">${rateInfo.rate}% ${frequencyText}</p>
+            <p class="text-sm text-gray-600">${rateInfo.active} activos de ${rateInfo.count} total</p>
+          </div>
+          <div class="text-right">
+            <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">
+              ${rateInfo.rate}%
+            </span>
+          </div>
+        </div>
+      </div>
+    `;
+    });
+
+    if (ratesHtml === '') {
+      ratesHtml = '<p class="text-gray-500 text-center py-4">No hay préstamos registrados</p>';
+    }
+
+    ratesList.innerHTML = ratesHtml;
+  }
+
+  // Eliminar funciones anteriores y redirigir
+  function openProjectionsModal() {
+    openInfoModal();
+  }
+
+  function closeProjectionsModal() {
+    closeInfoModal();
+  }
+  // Eliminar la función anterior si existe
+  function openPaymentsModal() {
+    openProjectionsModal();
+  }
+
+  function openClientDetailFromNotification(loanId) {
+    closeNotificationsModal();
+    openClientDetail(loanId);
+  }
+
+  function setActiveTab(tab) {
+    // Cambiar tabs activos visualmente
+    const tabs = document.querySelectorAll('.sticky.bottom-0 button');
+    tabs.forEach(tabButton => {
+      tabButton.classList.remove('text-blue-600');
+      tabButton.classList.add('text-gray-500');
+    });
+
+    event.currentTarget.classList.remove('text-gray-500');
+    event.currentTarget.classList.add('text-blue-600');
+  }
+
+  // Prevenir zoom en móviles
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', function (event) {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, false);
+
+</script>
+</body>
+
+</html>
